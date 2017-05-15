@@ -1,0 +1,44 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+```{r}
+AllData<- read.csv("movie_metadata.csv",header = T, stringsAsFactors = F)
+str(AllData)
+
+```
+```{r}
+table(AllData$color)
+```
+
+```{r}
+library(ggplot2)
+ggplot(AllData,aes(AllData$color)) + geom_histogram(stat="count") + labs(x="Movie Color Type",title="Number of b/w vs color movies")
+```
+```{r}
+MovieYearData<- AllData[!is.na(AllData$title_year),]
+MovieYearData$color<- ifelse(MovieYearData$color=="","Color",MovieYearData$color)   #Missing data
+ggplot(MovieYearData,aes(x=title_year))+geom_histogram(bins = 100,fill="steelblue",alpha = 0.5,col="black")+labs(title="Movies vs year",x="Year",y="Number of movies") + facet_grid(.~color,scales = "free")
+```
+```{r}
+AvgScoresByYear<- aggregate(imdb_score~title_year,data=MovieYearData,FUN=mean)
+ggplot(AvgScoresByYear,aes(y=imdb_score,x=title_year,color=imdb_score)) + geom_point()+scale_color_gradient(low = "blue",high = "red") +labs(x="Title Year",y="IMDB score",title="Average scores by year") + geom_smooth(method = "lm")
+```
+```{r}
+AvgRatingbyCR<- aggregate(imdb_score~content_rating,data=AllData,FUN=mean)
+ggplot(AvgRatingbyCR,aes(y=imdb_score,x=content_rating,color=imdb_score,label=imdb_score)) + geom_point()+scale_color_gradient(low = "blue",high = "red") +labs(x="Content rating",y="IMDB score",title="Average scores by content rating") + theme(axis.text.x=element_text(angle = 90, hjust = 0)) + geom_text(aes(label=round(imdb_score,2)),size=3,hjust=-0.15, vjust=0.25)
+```
+
+```{r}
+library(plotly)
+  FbData<- AllData[AllData$movie_facebook_likes>20000,]
+  FbData$movie_title<-substr(FbData$movie_title,1,nchar(FbData$movie_title)-2)
+  p<-ggplot(FbData,aes(y=imdb_score,x=movie_facebook_likes,color=imdb_score,label2=movie_title)) + geom_jitter()+scale_color_gradient(low = "blue",high = "red") +labs(x="Movie facebook likes",y="IMDB score",title="IMDB score vs facebook likes",subtitle="FB likes greater than 20000")
+ggplotly(p,tooltip = "movie_title")
+```
+
+
